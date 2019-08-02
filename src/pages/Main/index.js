@@ -17,6 +17,8 @@ import {
   Bio,
   ProfileButton,
   ProfileButtonText,
+  UserIcons,
+  DeleteButton,
 } from './styles';
 
 export default class Main extends Component {
@@ -75,6 +77,19 @@ export default class Main extends Component {
     Keyboard.dismiss();
   };
 
+  handleDeleteUser = item => {
+    const { users } = this.state;
+
+    const newUsers = [...users];
+
+    const index = users.findIndex(user => user.login === item.login);
+
+    if (index !== -1) {
+      newUsers.splice(index, 1);
+      this.setState({ users: newUsers });
+    }
+  };
+
   handleNavigate = user => {
     const { navigation } = this.props;
 
@@ -110,7 +125,12 @@ export default class Main extends Component {
           keyExtractor={user => user.login}
           renderItem={({ item }) => (
             <User>
-              <Avatar source={{ uri: item.avatar }} />
+              <UserIcons>
+                <Avatar source={{ uri: item.avatar }} />
+                <DeleteButton onPress={() => this.handleDeleteUser(item)}>
+                  <Icon name="close" size={14} color="#fff" />
+                </DeleteButton>
+              </UserIcons>
               <Name>{item.name}</Name>
               <Bio>{item.bio}</Bio>
 
