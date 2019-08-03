@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { ActivityIndicator } from 'react-native';
 import PropTypes from 'prop-types';
 import api from '../../services/api';
 
@@ -31,6 +32,8 @@ export default class User extends Component {
   state = {
     stars: [],
     loading: true,
+    page: 1,
+    onEndReachedCalledDuringMomentum: false,
   };
 
   async componentDidMount() {
@@ -42,12 +45,36 @@ export default class User extends Component {
     this.setState({
       stars: response.data,
       loading: false,
+      loadingMore: false,
     });
   }
 
+  loadMore = async user => {
+    const { stars, page, onEndReachedCalledDuringMomentum } = this.state;
+
+    if (!onEndReachedCalledDuringMomentum) {
+      this.setState({ loadingMore: true });
+
+      const newPage = page + 1;
+
+      const response = await api.get(`/users/${user.login}/starred`, {
+        params: {
+          page: newPage,
+        },
+      });
+
+      this.setState({
+        stars: [...stars, ...response.data],
+        page: newPage,
+        onEndReachedCalledDuringMomentum: true,
+        loadingMore: false,
+      });
+    }
+  };
+
   render() {
     const { navigation } = this.props;
-    const { stars, loading } = this.state;
+    const { stars, loading, loadingMore } = this.state;
 
     const user = navigation.getParam('user');
 
@@ -65,6 +92,13 @@ export default class User extends Component {
           <Stars
             data={stars}
             keyExtractor={star => String(star.id)}
+            onEndReachedThreshold={0.25}
+            onEndReached={() => this.loadMore(user)}
+            onMomentumScrollBegin={() =>
+              this.setState({
+                onEndReachedCalledDuringMomentum: false,
+              })
+            }
             renderItem={({ item }) => (
               <Starred>
                 <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
@@ -76,6 +110,8 @@ export default class User extends Component {
             )}
           />
         )}
+
+        {loadingMore && <ActivityIndicator color="#7159c1" />}
       </Container>
     );
   }
